@@ -6,30 +6,34 @@ import os
 import time
 
 
-def load_model(file='model.pickle'):
+def load_model(file='model.pickle (1)'):
     with open(file, 'rb') as f:
         model = pickle.load(f)
 
-    return model
+    return model.coef_[0]
 
 
-def remove_green(img, model):
+def remove_green(img, coef, bg):
 
     newImg = img.copy()
+    if img.shape != bg.shape:
+        bg = cv.resize(bg, img.shape[-2::-1])
 
-    w3, w2, w1, w0 = model.coef_[0]
+    w3, w2, w1, w0 = coef
 
-    R = img[:, :, 0]
-    G = img[:, :, 1]
-    B = img[:, :, 2]
+    B, G, R = cv.split(img)
     inter = np.ones(R.shape)
 
-    mask = w3 * R + w2 * G + w1 * B + w0 * inter
+    mask = w3 * B + w2 * G + w1 * R + w0 * inter
 
     mask = 1 / (1 + 1/np.exp(mask))
 
-    newImg[mask > 0.99999999] = [0, 0, 0]
+    threhold = 0.999999
+    newImg[mask > threhold] = [0, 0, 0]
+    bg[mask < threhold] = [0, 0, 0]
 
+
+    return newImg + bg
 
     # shape = img.shape
     # pixcels = img.copy().reshape(-1, 3)
@@ -38,20 +42,56 @@ def remove_green(img, model):
     #     if model.predict(features)[0] == str(1):
     #         pixcels[i] = np.array([255, 255, 255])
     # newImg = pixcels.reshape(shape)
-    return newImg
+
+
+def process_video(path, bg, coef):
+
+    cap = cv.VideoCapture(path)
+
+    while (cap.isOpened()):
+        ret, frame = cap.read()
+
+        processed_frame = remove_green(frame, coef, bg)
+
+        cv.imshow('frame', processed_frame)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv.destroyAllWindows()
+
+
+def process(fg, bg, type_fg):
+
+    coef = load_model()
+
+    bg = cv.imread(bg)
+    bg = cv.cvtColor(bg, cv.COLOR_BGR2RGB)
+
+    if type_fg == 'video':
+
+        pass
+    else:
+        fg = cv.imread(fg)
+        fg = cv.cvtColor(fg, cv.COLOR_BGR2RGB)
+        return remove_green(fg, coef, bg)
 
 
 if __name__ == '__main__':
+
+    coef = load_model()
+
     path = os.getcwd()
     nameImg = '2.jpg'
     pathImg = os.path.join(path, 'test_data', nameImg)
+
+    pathImg_1 = os.path.join(path, 'back_ground', '1.jpg')
+
     img = cv.imread(pathImg, 1)
+    bg = cv.imread(pathImg_1, 1)
 
-    start = time.time()
-    model = load_model()
-    print(time.time() - start)
 
-    newImg = remove_green(img, model)
+    newImg = remove_green(img, coef, bg)
     plt.subplot(1, 2, 1);
     plt.imshow(img)
 
@@ -59,3 +99,7 @@ if __name__ == '__main__':
     plt.imshow(newImg)
 
     plt.show()
+
+
+    # path_video = os.path.join(path, 'video', 'helicopter-2.mp4')
+    # process_video(path_video, bg, coef)

@@ -35,8 +35,9 @@ fg.close()
 if text == 'video':
 
     bg = cv.imread(bg.name)
+    bg = cv.cvtColor(bg, cv.COLOR_BGR2RGB)
 
-    coef = main.load_model('model (5).pickle')
+    coef = main.load_model()
     vf = cv.VideoCapture(fg.name)
 
     stframe = st.empty()
@@ -47,6 +48,7 @@ if text == 'video':
             print("Can't receive frame (stream end?). Exiting ...")
             break
 
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         processed_frame = main.remove_green(frame, coef, bg)
 
         stframe.image(processed_frame, width=682)
