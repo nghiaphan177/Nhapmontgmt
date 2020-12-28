@@ -4,31 +4,43 @@ import tempfile
 import cv2 as cv
 
 
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
+
+load_css('style.css')
+
+
+with st.sidebar:
+    t = "<span class='bold blue highlight'>Chọn hình ảnh backgound</span>"
+    st.markdown(t, unsafe_allow_html=True)
+    b = st.file_uploader("", type=["png", "jpg", "jpeg"])
+    if b:
+        bg = tempfile.NamedTemporaryFile(delete=False)
+        bg.write(b.read())
+        bg.close()
 
 
 
-b = st.file_uploader("Hình ảnh back ground", type=["png", "jpg", "jpeg"])
-if b:
-    bg = tempfile.NamedTemporaryFile(delete=False)
-    bg.write(b.read())
-    bg.close()
-type_fg_file = st.selectbox("", ['video', 'image'])
+    t = "<span class='bold red highlight'>Chọn hình ảnh hoặc video</span>"
+    st.markdown(t, unsafe_allow_html=True)
+    type_fg_file = st.selectbox("", ['video', 'image'])
 
-if type_fg_file  == 'video':
-    text = 'video'
-    type = 'mp4'
-else:
-    text = 'image'
-    type = ['png', 'jpg', 'jpeg']
+    if type_fg_file  == 'video':
+        text = 'video'
+        type = 'mp4'
+    else:
+        text = 'image'
+        type = ['png', 'jpg', 'jpeg']
 
 
-f = st.file_uploader(text, type)
-btn = st.button('Run')
-if not btn:
-    st.stop()
-fg = tempfile.NamedTemporaryFile(delete=False)
-fg.write(f.read())
-fg.close()
+    f = st.file_uploader('', type, key='12')
+    btn = st.button('Run')
+    if not btn:
+        st.stop()
+    fg = tempfile.NamedTemporaryFile(delete=False)
+    fg.write(f.read())
+    fg.close()
 
 
 
